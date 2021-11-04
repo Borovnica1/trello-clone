@@ -7,9 +7,41 @@ const addItemsDiv = document.querySelector('.add-items');
 
 const container = document.querySelector('.container');
 const dropDivs = document.querySelectorAll('.container > .div');
-let ids = 3;
+let ids = 1;
 
 let dropDivActiveZone = null;
+
+let dropZonesDivs = [[],[],[],[]];
+
+if (sessionStorage.getItem('active') === 'true') {
+  var storedItems = JSON.parse(sessionStorage.getItem("dropZones"));
+  dropZonesDivs[0].push(...storedItems[0]);
+  dropZonesDivs[1].push(...storedItems[1]);
+  dropZonesDivs[2].push(...storedItems[2]);
+  dropZonesDivs[3].push(...storedItems[3]);
+} else {
+  sessionStorage.setItem('active', 'true');
+  dropZonesDivs[0].push('Some example', 'Some example');
+  sessionStorage.setItem('dropZones', JSON.stringify(dropZonesDivs));
+};
+populateDropZones();
+
+
+function populateDropZones() {
+  for (let i = 0; i < dropDivs.length; i++) {
+    for (let j = 0; j < dropZonesDivs[i].length; j++) {
+      const htmlEl = document.createElement('span');
+      htmlEl.setAttribute('class', 'list-item'); 
+      htmlEl.setAttribute('id', `${ids++}`); 
+      htmlEl.setAttribute('draggable', 'true'); 
+      htmlEl.textContent = dropZonesDivs[i][j];
+      htmlEl.addEventListener('dragstart', dragstart_handler);
+      htmlEl.addEventListener("dragend", dragend_handler);
+
+      dropDivs[i].insertBefore(htmlEl, dropDivs[i].children[dropDivs[i].children.length-1]);
+    };
+  };
+};
 
 function addItem(textEl) {
   const parentDiv = textEl.parentElement.parentElement;
@@ -22,6 +54,8 @@ function addItem(textEl) {
   htmlEl.addEventListener('dragstart', dragstart_handler);
   htmlEl.addEventListener("dragend", dragend_handler);
 
+  dropZonesDivs[Number(parentDiv.dataset.divid)].push(textEl.value);
+  sessionStorage.setItem('dropZones', JSON.stringify(dropZonesDivs));
   parentDiv.insertBefore(htmlEl, textEl.parentElement);
 };
 
@@ -82,12 +116,21 @@ function drop_handler(ev) {
 };
 
 function dragend_handler(ev) {
-  ev.target.classList.remove('list-item--active')
+  ev.target.classList.remove('list-item--active');
   for (let div of dropDivs) {
     div.classList.remove('drop-div--active');
     div.classList.remove('drop-div-started-from');
     dropDivActiveZone = null;
-  }
+  };
+
+  dropZonesDivs = [[],[],[],[]];
+  for (let i = 0; i < dropDivs.length; i++) {
+    const items = dropDivs[i].querySelectorAll('.list-item');
+    for (let j = 0; j < items.length; j++) {
+      dropZonesDivs[i].push(items[j].textContent);
+    };
+  };
+  sessionStorage.setItem('dropZones', JSON.stringify(dropZonesDivs));
 }
 
 for (let item of addItemSpans) {
